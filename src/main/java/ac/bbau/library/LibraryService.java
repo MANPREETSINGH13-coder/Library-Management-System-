@@ -1,134 +1,169 @@
 package ac.bbau.library;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LibraryService {
     public enum AccountStatus { PENDING, ACTIVE, REJECTED }
-    public record Student(long id, String name, String studentId, String email, AccountStatus status) {}
-    public record Administrator(long id, String name, String email, String staffRole) {}
-    public record Book(long id, String title, String author, String category, int copies, int available) {}
-    public record Loan(long id, long bookId, String studentId, String dueDate, boolean returned) {}
-    public record Fine(long id, String studentId, String reason, int amount, String status) {}
 
-    private final AtomicLong ids = new AtomicLong(1000);
-    private final Map<Long, Student> students = new LinkedHashMap<>();
-    private final Map<Long, Administrator> administrators = new LinkedHashMap<>();
-    private final Map<Long, Book> books = new LinkedHashMap<>();
-    private final Map<Long, Loan> loans = new LinkedHashMap<>();
-    private final Map<Long, Fine> fines = new LinkedHashMap<>();
+    @Document("students")
+    public record Student(@Id long id, String name, String studentId, String email, AccountStatus status) {}
+    @Document("administrators")
+    public record Administrator(@Id long id, String name, String email, String staffRole) {}
+    @Document("books")
+    public record Book(@Id long id, String title, String author, String category, int copies, int available) {}
+    @Document("issued_books")
+    public record Loan(@Id long id, long bookId, String studentId, String dueDate, boolean returned) {}
+    @Document("fines")
+    public record Fine(@Id long id, String studentId, String reason, int amount, String status) {}
 
-    public LibraryService() {
-        administrators.put(1L, new Administrator(1, "Dr. Meera Joshi", "meera.joshi@bbau.ac.in", "Librarian"));
-        students.put(201L, new Student(201, "Manpreet Singh", "STU-2024-018", "manpreet@bbau.ac.in", AccountStatus.ACTIVE));
-        students.put(202L, new Student(202, "Milan Kumar", "STU-2023-104", "milan@bbau.ac.in", AccountStatus.ACTIVE));
-        students.put(203L, new Student(203, "Priya Sharma", "STU-2025-027", "priya@bbau.ac.in", AccountStatus.PENDING));
-        books.put(101L, new Book(101, "The Discovery of India", "Jawaharlal Nehru", "History", 8, 5));
-        books.put(102L, new Book(102, "Wings of Fire", "A. P. J. Abdul Kalam", "Biography", 12, 3));
-        books.put(103L, new Book(103, "The God of Small Things", "Arundhati Roy", "Fiction", 6, 0));
-        books.put(104L, new Book(104, "Introduction to Algorithms", "Thomas H. Cormen", "Computer science", 5, 2));
-        books.put(105L, new Book(105, "The White Tiger", "Aravind Adiga", "Fiction", 7, 1));
-        loans.put(301L, new Loan(301, 103, "STU-2024-018", "2026-10-16", false));
-        loans.put(302L, new Loan(302, 102, "STU-2023-104", "2026-10-17", false));
-        fines.put(401L, new Fine(401, "STU-2024-018", "Late return", 50, "DUE"));
+    @Document("library_counters")
+    public static class Counter {
+        @Id private String id;
+        private long value;
+        public Counter() {}
+        public Counter(String id, long value) { this.id = id; this.value = value; }
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public long getValue() { return value; }
+        public void setValue(long value) { this.value = value; }
+    }
+
+    private final MongoTemplate mongo;
+
+    public LibraryService(MongoTemplate mongo) {
+        this.mongo = mongo;
+        seedDemoData();
+    }
+
+    private void seedDemoData() {
+        if (!mongo.exists(Query.query(Criteria.where("_id").is(1L)), Administrator.class))
+            mongo.save(new Administrator(1, "Dr. Meera Joshi", "meera.joshi@bbau.ac.in", "Librarian"));
+        seedStudent(201, "Manpreet Singh", "STU-2024-018", "manpreet@bbau.ac.in", AccountStatus.ACTIVE);
+        seedStudent(202, "Milan Kumar", "STU-2023-104", "milan@bbau.ac.in", AccountStatus.ACTIVE);
+        seedStudent(203, "Priya Sharma", "STU-2025-027", "priya@bbau.ac.in", AccountStatus.PENDING);
+        if (mongo.count(new Query(), Book.class) == 0) {
+            mongo.save(new Book(101, "The Discovery of India", "Jawaharlal Nehru", "History", 8, 5));
+            mongo.save(new Book(102, "Wings of Fire", "A. P. J. Abdul Kalam", "Biography", 12, 3));
+            mongo.save(new Book(103, "The God of Small Things", "Arundhati Roy", "Fiction", 6, 0));
+            mongo.save(new Book(104, "Introduction to Algorithms", "Thomas H. Cormen", "Computer science", 5, 2));
+            mongo.save(new Book(105, "The White Tiger", "Aravind Adiga", "Fiction", 7, 1));
+        }
+        if (mongo.count(new Query(), Loan.class) == 0) {
+            mongo.save(new Loan(301, 103, "STU-2024-018", "2026-10-16", false));
+            mongo.save(new Loan(302, 102, "STU-2023-104", "2026-10-17", false));
+        }
+        if (mongo.count(new Query(), Fine.class) == 0)
+            mongo.save(new Fine(401, "STU-2024-018", "Late return", 50, "DUE"));
+        mongo.upsert(Query.query(Criteria.where("_id").is("library")), new Update().max("value", 1000), Counter.class);
+    }
+
+    private void seedStudent(long id, String name, String studentId, String email, AccountStatus status) {
+        if (!mongo.exists(Query.query(Criteria.where("_id").is(id)), Student.class))
+            mongo.save(new Student(id, name, studentId, email, status));
+    }
+
+    private long nextId() {
+        Counter counter = mongo.findAndModify(Query.query(Criteria.where("_id").is("library")), new Update().inc("value", 1),
+                FindAndModifyOptions.options().returnNew(true), Counter.class);
+        return Optional.ofNullable(counter).orElseThrow(() -> new IllegalStateException("Could not allocate a library record ID.")).getValue();
     }
 
     public synchronized Student registerStudent(String name, String studentId, String email) {
-        if (students.values().stream().anyMatch(s -> s.email().equalsIgnoreCase(email) || s.studentId().equalsIgnoreCase(studentId)))
-            throw new IllegalArgumentException("A student with this email or student ID already exists.");
-        Student student = new Student(ids.incrementAndGet(), name, studentId, email, AccountStatus.PENDING);
-        students.put(student.id(), student);
-        return student;
+        boolean duplicate = mongo.exists(Query.query(new Criteria().orOperator(
+                Criteria.where("email").regex("^" + java.util.regex.Pattern.quote(email) + "$", "i"),
+                Criteria.where("studentId").regex("^" + java.util.regex.Pattern.quote(studentId) + "$", "i"))), Student.class);
+        if (duplicate) throw new IllegalArgumentException("A student with this email or student ID already exists.");
+        Student student = new Student(nextId(), name, studentId, email, AccountStatus.PENDING);
+        return mongo.save(student);
     }
 
     public synchronized Student reviewStudent(long id, boolean approve) {
-        Student existing = Optional.ofNullable(students.get(id)).orElseThrow(() -> new NoSuchElementException("Student not found."));
+        Student existing = Optional.ofNullable(mongo.findById(id, Student.class)).orElseThrow(() -> new NoSuchElementException("Student not found."));
         if (existing.status() != AccountStatus.PENDING) throw new IllegalStateException("This request has already been reviewed.");
-        Student reviewed = new Student(existing.id(), existing.name(), existing.studentId(), existing.email(), approve ? AccountStatus.ACTIVE : AccountStatus.REJECTED);
-        students.put(id, reviewed);
-        return reviewed;
+        return mongo.save(new Student(existing.id(), existing.name(), existing.studentId(), existing.email(), approve ? AccountStatus.ACTIVE : AccountStatus.REJECTED));
     }
 
     public synchronized Administrator createAdministrator(String name, String email, String staffRole) {
-        if (administrators.values().stream().anyMatch(a -> a.email().equalsIgnoreCase(email)))
+        if (mongo.exists(Query.query(Criteria.where("email").regex("^" + java.util.regex.Pattern.quote(email) + "$", "i")), Administrator.class))
             throw new IllegalArgumentException("An administrator with this email already exists.");
-        Administrator administrator = new Administrator(ids.incrementAndGet(), name, email, staffRole);
-        administrators.put(administrator.id(), administrator);
-        return administrator;
+        return mongo.save(new Administrator(nextId(), name, email, staffRole));
     }
 
     public synchronized Book addBook(String title, String author, String category, int copies) {
         if (copies < 1) throw new IllegalArgumentException("At least one copy is required.");
-        Book book = new Book(ids.incrementAndGet(), title, author, category, copies, copies);
-        books.put(book.id(), book);
-        return book;
+        return mongo.save(new Book(nextId(), title, author, category, copies, copies));
     }
 
     public synchronized void deleteBook(String title) {
-        Book book = books.values().stream().filter(b -> b.title().equalsIgnoreCase(title)).findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Book not found."));
-        if (loans.values().stream().anyMatch(l -> l.bookId() == book.id() && !l.returned()))
-            throw new IllegalStateException("Return all borrowed copies before deleting this title.");
-        books.remove(book.id());
+        Book book = mongo.findOne(Query.query(Criteria.where("title").regex("^" + java.util.regex.Pattern.quote(title) + "$", "i")), Book.class);
+        if (book == null) throw new NoSuchElementException("Book not found.");
+        if (mongo.exists(Query.query(Criteria.where("bookId").is(book.id()).and("returned").is(false)), Loan.class))
+            throw new IllegalStateException("Return all issued copies before deleting this title.");
+        mongo.remove(Query.query(Criteria.where("_id").is(book.id())), Book.class);
     }
 
     public synchronized Fine addFine(String studentId, String reason, int amount) {
         if (amount < 1) throw new IllegalArgumentException("Fine amount must be at least ₹1.");
-        Fine fine = new Fine(ids.incrementAndGet(), studentId, reason, amount, "DUE");
-        fines.put(fine.id(), fine);
-        return fine;
+        return mongo.save(new Fine(nextId(), studentId, reason, amount, "DUE"));
     }
 
     public synchronized Fine submitFine(long id, String studentId) {
-        Fine fine = Optional.ofNullable(fines.get(id)).orElseThrow(() -> new NoSuchElementException("Fine not found."));
+        Fine fine = Optional.ofNullable(mongo.findById(id, Fine.class)).orElseThrow(() -> new NoSuchElementException("Fine not found."));
         if (!fine.studentId().equals(studentId)) throw new NoSuchElementException("Fine not found.");
         if (!fine.status().equals("DUE")) throw new IllegalStateException("Only due fines can be submitted.");
-        Fine submitted = new Fine(fine.id(), fine.studentId(), fine.reason(), fine.amount(), "SUBMITTED");
-        fines.put(id, submitted);
-        return submitted;
+        return mongo.save(new Fine(fine.id(), fine.studentId(), fine.reason(), fine.amount(), "SUBMITTED"));
     }
 
     public synchronized Fine confirmFine(long id) {
-        Fine fine = Optional.ofNullable(fines.get(id)).orElseThrow(() -> new NoSuchElementException("Fine not found."));
+        Fine fine = Optional.ofNullable(mongo.findById(id, Fine.class)).orElseThrow(() -> new NoSuchElementException("Fine not found."));
         if (!fine.status().equals("SUBMITTED")) throw new IllegalStateException("This fine has no payment submission to confirm.");
-        Fine paid = new Fine(fine.id(), fine.studentId(), fine.reason(), fine.amount(), "PAID");
-        fines.put(id, paid);
-        return paid;
+        return mongo.save(new Fine(fine.id(), fine.studentId(), fine.reason(), fine.amount(), "PAID"));
     }
 
     public synchronized Loan issueBook(long bookId, String studentId, String dueDate) {
-        Book book = Optional.ofNullable(books.get(bookId)).orElseThrow(() -> new NoSuchElementException("Book not found."));
-        if (book.available() < 1) throw new IllegalStateException("No copies are available.");
-        books.put(bookId, new Book(book.id(), book.title(), book.author(), book.category(), book.copies(), book.available() - 1));
-        Loan loan = new Loan(ids.incrementAndGet(), bookId, studentId, dueDate, false);
-        loans.put(loan.id(), loan);
-        return loan;
+        Book book = mongo.findAndModify(Query.query(Criteria.where("_id").is(bookId).and("available").gt(0)),
+                new Update().inc("available", -1), FindAndModifyOptions.options().returnNew(true), Book.class);
+        if (book == null) {
+            if (mongo.exists(Query.query(Criteria.where("_id").is(bookId)), Book.class)) throw new IllegalStateException("No copies are available.");
+            throw new NoSuchElementException("Book not found.");
+        }
+        return mongo.save(new Loan(nextId(), bookId, studentId, dueDate, false));
     }
 
     public synchronized Loan returnBook(long loanId) {
-        Loan loan = Optional.ofNullable(loans.get(loanId)).orElseThrow(() -> new NoSuchElementException("Loan not found."));
-        if (loan.returned()) throw new IllegalStateException("This book has already been returned.");
-        Book book = books.get(loan.bookId());
-        books.put(book.id(), new Book(book.id(), book.title(), book.author(), book.category(), book.copies(), book.available() + 1));
-        Loan returned = new Loan(loan.id(), loan.bookId(), loan.studentId(), loan.dueDate(), true);
-        loans.put(loanId, returned);
-        return returned;
+        Loan loan = mongo.findAndModify(Query.query(Criteria.where("_id").is(loanId).and("returned").is(false)),
+                new Update().set("returned", true), FindAndModifyOptions.options().returnNew(true), Loan.class);
+        if (loan == null) {
+            if (mongo.exists(Query.query(Criteria.where("_id").is(loanId)), Loan.class)) throw new IllegalStateException("This book has already been returned.");
+            throw new NoSuchElementException("Loan not found.");
+        }
+        mongo.updateFirst(Query.query(Criteria.where("_id").is(loan.bookId())), new Update().inc("available", 1), Book.class);
+        return loan;
     }
 
     public synchronized Loan returnBook(long loanId, String studentId) {
-        Loan loan = Optional.ofNullable(loans.get(loanId)).orElseThrow(() -> new NoSuchElementException("Loan not found."));
+        Loan loan = Optional.ofNullable(mongo.findById(loanId, Loan.class)).orElseThrow(() -> new NoSuchElementException("Loan not found."));
         if (!loan.studentId().equalsIgnoreCase(studentId)) throw new NoSuchElementException("Loan not found.");
         return returnBook(loanId);
     }
 
-    public synchronized List<Student> students() { return List.copyOf(students.values()); }
-    public synchronized List<Student> pendingStudents() { return students.values().stream().filter(s -> s.status() == AccountStatus.PENDING).toList(); }
-    public synchronized List<Administrator> administrators() { return List.copyOf(administrators.values()); }
-    public synchronized List<Book> books() { return List.copyOf(books.values()); }
-    public synchronized List<Loan> loans() { return List.copyOf(loans.values()); }
-    public synchronized List<Loan> loansForStudent(String studentId) { return loans.values().stream().filter(l -> l.studentId().equalsIgnoreCase(studentId)).toList(); }
-    public synchronized List<Fine> fines() { return List.copyOf(fines.values()); }
-    public synchronized List<Fine> finesForStudent(String studentId) { return fines.values().stream().filter(f -> f.studentId().equals(studentId)).toList(); }
+    public List<Student> students() { return mongo.findAll(Student.class); }
+    public List<Student> pendingStudents() { return mongo.find(Query.query(Criteria.where("status").is(AccountStatus.PENDING)), Student.class); }
+    public List<Administrator> administrators() { return mongo.findAll(Administrator.class); }
+    public List<Book> books() { return mongo.findAll(Book.class); }
+    public List<Loan> loans() { return mongo.findAll(Loan.class); }
+    public List<Loan> loansForStudent(String studentId) { return mongo.find(Query.query(Criteria.where("studentId").regex("^" + java.util.regex.Pattern.quote(studentId) + "$", "i")), Loan.class); }
+    public List<Fine> fines() { return mongo.findAll(Fine.class); }
+    public List<Fine> finesForStudent(String studentId) { return mongo.find(Query.query(Criteria.where("studentId").is(studentId)), Fine.class); }
 }

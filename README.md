@@ -23,6 +23,8 @@ Start the Java API on port 8080:
 mvn spring-boot:run
 ```
 
+The API stores accounts, students, administrators, books, issues/returns, fines, and ID counters in MongoDB. By default it connects to `mongodb://localhost:27017/bbau_library`. Set `MONGODB_URI` to a MongoDB Atlas connection string or another MongoDB URI before starting the API if MongoDB is hosted remotely.
+
 In a second terminal, start the dashboard on port 5173:
 
 ```powershell
@@ -59,5 +61,4 @@ Use these accounts with the matching account type selected on the sign-in screen
 | Administration | `meera.joshi@bbau.ac.in` | `Library@123` |
 | Super Admin | `superadmin@bbau.ac.in` | `Admin@123` |
 
-The sample student list includes Manpreet Singh (`STU-2024-018`), Milan Kumar (`STU-2023-104`), and Priya Sharma (`STU-2025-027`, pending Administration approval). Student registration passwords and staff account passwords are stored as salted PBKDF2 hashes. This project is still a classroom prototype: users, sessions, books and circulation records are held in memory, so they reset when the Java API restarts. Demo passwords are public by design; change them and add persistent storage, rate limiting, and production-grade session controls before deployment.
-
+The sample student list includes Manpreet Singh (`STU-2024-018`), Milan Kumar (`STU-2023-104`), and Priya Sharma (`STU-2025-027`, pending Administration approval). Student registration passwords and staff account passwords are stored as salted PBKDF2 hashes in MongoDB. Library records persist across API restarts; bearer sessions remain in memory and users must sign in again after a restart. Demo passwords are public by design; change them and add rate limiting and production-grade session controls before deployment.
