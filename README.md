@@ -23,7 +23,7 @@ Start the Java API on port 8080:
 .\start-api.ps1
 ```
 
-The script asks for the Supabase database password without echoing it, percent-encodes it, and starts the Java API using the supplied Session Pooler host (port 5432). It does not save the password. The API stores accounts, students, administrators, books, issues/returns, fines, and ID counters in Supabase PostgreSQL. The schema and demo records are initialized at startup. Do not use the transaction pooler for this Spring JDBC backend.
+The script asks for the Supabase database password without echoing it, percent-encodes it, and starts the Java API using the supplied Session Pooler host (port 5432). It does not save the password. To avoid OneDrive build-output permission issues, it copies the Java sources to a temporary Windows folder before building. The API stores accounts, students, administrators, books, issues/returns, fines, and ID counters in Supabase PostgreSQL. The schema and demo records are initialized at startup. Do not use the transaction pooler for this Spring JDBC backend.
 
 In a second terminal, start the dashboard on port 5173:
 
