@@ -7,8 +7,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,8 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthService {
     public record Session(String token, String role, String name, String studentId) {}
 
-    @Document("accounts")
-    public record Account(@Id String id, String email, String name, String role, String studentId, String passwordHash, String status) {}
+    public record Account(String id, String email, String name, String role, String studentId, String passwordHash, String status) {}
 
     private final AccountRepository accountRepository;
     private final Map<String, Account> sessions = new ConcurrentHashMap<>();
