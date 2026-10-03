@@ -51,16 +51,8 @@ The first OCR scan downloads the English recognition model from the configured T
 - `POST /api/admin/fines/{id}/confirm` — Administration confirms a submitted payment.
 - `GET /api/books` — browse available titles.
 
-## Demo access and limits
+## Demo data and limits
 
-Use these accounts with the matching account type selected on the sign-in screen:
-
-| Account type | Email | Password |
-| --- | --- | --- |
-| Student | `manpreet@bbau.ac.in` | `Student@123` |
-| Administration | `meera.joshi@bbau.ac.in` | `Library@123` |
-| Super Admin | `superadmin@bbau.ac.in` | `Admin@123` |
-
-The sample student list includes Manpreet Singh (`STU-2024-018`), Milan Kumar (`STU-2023-104`), and Priya Sharma (`STU-2025-027`, pending Administration approval). Student registration passwords and staff account passwords are stored as salted PBKDF2 hashes in Supabase PostgreSQL. Library records persist across API restarts; bearer sessions remain in memory and users must sign in again after a restart. Demo passwords are public by design; change them and add rate limiting and production-grade session controls before deployment.
+The sample student list includes Manpreet Singh (`STU-2024-018`), Milan Kumar (`STU-2023-104`), and Priya Sharma (`STU-2025-027`, pending Administration approval). Use the registration flow or credentials configured privately in the deployment environment; login credentials are intentionally not documented in this public repository. Student registration passwords and staff account passwords are stored as salted PBKDF2 hashes in Supabase PostgreSQL. Library records persist across API restarts; bearer sessions remain in memory and users must sign in again after a restart.
 
 For deployment, set `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` as private backend environment variables. On startup, the backend creates or refreshes that Super Admin account and removes the built-in demo Super Admin account if a different email is configured. Never put the Super Admin password in GitHub source or a frontend `VITE_` variable.
