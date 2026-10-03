@@ -34,3 +34,9 @@
 .home-hero{background-image:none!important}
 .home-page main,.home-gallery,.home-services,.home-footer{background-color:transparent}
 
+/* Let the navigation bar span the viewport instead of inheriting the content width. */
+.home-nav{width:100%;max-width:none;margin:0;box-sizing:border-box;padding-inline:clamp(20px,5vw,80px);background:#102f54!important;color:#fff!important}
+.home-brand,.home-brand span b,.home-brand span small,.home-nav .demo-chip{color:#fff!important;-webkit-text-fill-color:#fff!important}
+.home-nav .demo-chip{border-color:#d5e6fb;background:#173f6b}
+.home-nav button.primary{color:#fff!important;background:#2878c7;border:1px solid #a8d2fa}
+
