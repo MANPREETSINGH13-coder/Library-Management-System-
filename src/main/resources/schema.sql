@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS books (
     copies INTEGER NOT NULL CHECK (copies > 0),
     available INTEGER NOT NULL CHECK (available >= 0 AND available <= copies)
 );
+ALTER TABLE books ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS books_public_read ON books;
+CREATE POLICY books_public_read ON books FOR SELECT TO anon, authenticated USING (true);
+GRANT SELECT ON books TO anon, authenticated;
 
 CREATE TABLE IF NOT EXISTS issued_books (
     id BIGINT PRIMARY KEY,
@@ -57,3 +61,4 @@ CREATE TABLE IF NOT EXISTS library_counters (
     id TEXT PRIMARY KEY,
     value BIGINT NOT NULL
 );
+
