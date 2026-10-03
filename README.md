@@ -21,7 +21,7 @@ Start the Java API on port 8080:
 
 ```powershell
 $env:SUPABASE_DB_URL = 'jdbc:postgresql://<session-pooler-host>:5432/postgres?user=postgres.<project-ref>&password=<database-password>&sslmode=require'
-mvn spring-boot:run
+.\mvnw.cmd spring-boot:run
 ```
 
 The API stores accounts, students, administrators, books, issues/returns, fines, and ID counters in Supabase PostgreSQL. In Supabase, open **Connect**, choose the **Session pooler** and its JDBC connection string (port 5432), then set it as `SUPABASE_DB_URL`. Keep the database password in the environment, not in source control. Do not use the transaction pooler for this Spring JDBC backend. The schema and demo records are initialized at startup.
