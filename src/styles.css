@@ -27,12 +27,10 @@
 .home-page{background:#123b69}.home-page main{max-width:none;margin:0;padding:0}.home-hero{width:100%;min-height:calc(100vh - 84px);margin:0;padding:54px max(20px,calc((100vw - 1128px)/2));background-image:url('../central-library-exterior.jpeg');background-position:center 45%;background-size:cover;background-repeat:no-repeat;background-attachment:scroll}.home-gallery,.home-services,.home-footer{max-width:1200px;margin-left:auto;margin-right:auto;padding-left:36px;padding-right:36px}@media(max-width:650px){.home-hero{min-height:calc(100vh - 68px);padding:30px 17px}.home-gallery,.home-services,.home-footer{padding-left:17px;padding-right:17px}}
 .home-gallery{padding:38px 0 52px;border-top:1px solid #e9eef5}.home-gallery>div:first-child>small{color:#3878b8;font-size:9px;font-weight:700;letter-spacing:1.2px}.home-gallery h2{margin:10px 0 6px;color:#203c60;font:700 24px Manrope;letter-spacing:-.4px}.home-gallery>div:first-child>p{margin:0 0 20px;color:#8090a4;font-size:10px}.home-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.home-gallery-grid figure{margin:0;overflow:hidden;border:1px solid #e5ebf3;border-radius:9px;background:#fff}.home-gallery-grid img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#eef3f8}.home-gallery-grid figcaption{padding:11px 12px;color:#314760;font-size:10px;font-weight:600}@media(max-width:900px){.home-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.home-gallery-grid{gap:9px}.home-gallery h2{font-size:20px}.home-gallery-grid figcaption{padding:9px;font-size:9px}}
 
-/* Keep the library photo in the page section directly below the navigation. */
-.home-page{background:#123b69!important}
-.home-page:before{display:none!important}
-.home-page main{width:100%;max-width:none;margin:0;padding:0}
-.home-nav{position:relative;z-index:2;width:100%;max-width:none;padding-inline:max(36px,calc((100vw - 1200px)/2));background:#0c2e53!important;border-bottom:1px solid #ffffff66!important}
-.home-hero{position:relative;isolation:isolate;width:100%;min-height:calc(100vh - 84px);margin:0;padding:54px max(20px,calc((100vw - 1128px)/2));background-color:#173b68;background-image:url('../central-library-exterior.jpeg')!important;background-position:center 48%;background-size:cover;background-repeat:no-repeat;background-attachment:scroll}
-.home-hero>*{position:relative;z-index:1}
-.home-copy{background:rgba(4,25,52,.9)!important}
-@media(max-width:650px){.home-nav{padding-inline:17px}.home-hero{min-height:calc(100vh - 68px);padding:30px 17px}}
+/* Keep the campus photo fixed below the navigation while the page content scrolls. */
+.home-page{position:relative;background:transparent!important}
+.home-page::before{content:"";position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background:url('/central-library-exterior.jpeg') center 45%/cover no-repeat}
+.home-page>header,.home-page>main{position:relative;z-index:1}
+.home-hero{background-image:none!important}
+.home-page main,.home-gallery,.home-services,.home-footer{background-color:transparent}
+
