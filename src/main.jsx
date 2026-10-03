@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ArrowLeftRight, BookCopy, BookOpen, BookOpenCheck, Camera, ChartNoAxesCombined, CircleCheck, Clock3, GraduationCap, LayoutDashboard, LibraryBig, LogOut, ReceiptIndianRupee, ScanLine, Search, Settings, ShieldCheck, Upload, UserRound, UserRoundCheck, UsersRound } from 'lucide-react';
-import { supabase } from './lib/supabase.js';
 import './styles.css';
 
 const demoBooks = [
@@ -87,10 +86,7 @@ function App() {
     };
     try {
       const [rawBooks, rawStudents, rawAdmins, rawLoans, rawFines] = await Promise.all([
-        supabase
-          ? supabase.from('books').select('id,title,author,category,copies,available').order('id')
-              .then(({ data, error }) => { if (error) throw new Error(`Supabase catalogue error: ${error.message}`); return data || []; })
-          : call('books'),
+        call('books'),
         currentRole === 'Administration' ? call('admin/students') : Promise.resolve([]),
         currentRole === 'Super Admin' ? call('super-admin/administrators') : Promise.resolve([]),
         currentRole === 'Administration' ? call('admin/loans') : currentRole === 'Student' ? call(`student/loans?studentId=${encodeURIComponent(ownStudentId)}`) : Promise.resolve([]),
