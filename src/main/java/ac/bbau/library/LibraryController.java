@@ -8,11 +8,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class LibraryController {
     private final LibraryService library;
     private final AuthService auth;
     public LibraryController(LibraryService library, AuthService auth) { this.library = library; this.auth = auth; }
+
+    @GetMapping("/health")
+    public Map<String, String> health() { return Map.of("status", "ok"); }
 
     @PostMapping("/auth/login")
     public AuthService.Session login(@RequestBody Login request) { return auth.login(request.email(), request.password(), request.role()); }

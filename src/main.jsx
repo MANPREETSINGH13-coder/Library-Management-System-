@@ -17,6 +17,7 @@ const navigation = {
   'Super Admin': [['Overview', LayoutDashboard], ['Administration', ShieldCheck], ['System settings', Settings]],
 };
 const today = () => new Date().toISOString().slice(0, 10);
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 function App() {
   const [role, setRole] = useState('');
@@ -53,7 +54,7 @@ function App() {
   async function request(path, method = 'GET', body = null) {
     let response;
     try {
-      response = await fetch(`/api/${path}`, {
+      response = await fetch(`${API_BASE_URL}/api/${path}`, {
         method,
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}),
@@ -79,7 +80,7 @@ function App() {
 
   async function loadDashboard(authToken = token, currentRole = role, ownStudentId = studentId) {
     const call = async (path, method = 'GET', body = null) => {
-      const response = await fetch(`/api/${path}`, { method, headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+      const response = await fetch(`${API_BASE_URL}/api/${path}`, { method, headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
       const data = response.status === 204 ? {} : await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || data.detail || data.title || `Dashboard request fail hui (HTTP ${response.status}).`);
       return data;
@@ -274,4 +275,3 @@ function BookTable({ books, student, admin, issue, remove }) { return <Table hea
 function AdminTable({ admins }) { return <Table heads={['NAME', 'EMAIL', 'ACCESS ROLE', 'STATUS']}>{admins.map(a => <tr key={a.email}><td>{a.name}</td><td>{a.email}</td><td>{a.staffRole}</td><td><i className="good">ACTIVE</i></td></tr>)}</Table>; }
 
 createRoot(document.getElementById('root')).render(<App/>);
-
