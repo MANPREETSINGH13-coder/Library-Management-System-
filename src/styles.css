@@ -48,3 +48,9 @@
 .home-page{background-color:#123b69!important;background-image:linear-gradient(rgba(8,34,64,.22),rgba(8,34,64,.22)),url('https://raw.githubusercontent.com/MANPREETSINGH13-coder/Library-Management-System-/main/public/central-library-exterior.jpeg')!important;background-position:center,center 45%!important;background-size:cover,cover!important;background-repeat:no-repeat,no-repeat!important;background-attachment:fixed,fixed!important}
 .home-page::before{content:none!important;display:none!important}
 
+/* Make section titles readable against the campus photograph. */
+.home-gallery>div:first-child,.home-services>div:first-child{width:fit-content;max-width:100%;margin-bottom:20px;padding:15px 19px;border:1px solid #c4ddf5;background:rgba(5,28,54,.94)!important;border-radius:11px;box-shadow:0 8px 24px #03172f70}
+.home-gallery>div:first-child>small,.home-services>div:first-child>small{color:#b9dcff!important}
+.home-gallery h2,.home-services h2{color:#fff!important;text-shadow:0 1px 3px #00152c}
+.home-gallery>div:first-child>p{color:#e6f1ff!important}
+
