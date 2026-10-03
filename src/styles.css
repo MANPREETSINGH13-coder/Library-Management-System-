@@ -29,7 +29,7 @@
 
 /* Keep the campus photo fixed below the navigation while the page content scrolls. */
 .home-page{position:relative;background:transparent!important}
-.home-page::before{content:"";position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background:url('/central-library-exterior.jpeg') center 45%/cover no-repeat}
+.home-page::before{content:"";position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background:url('https://raw.githubusercontent.com/MANPREETSINGH13-coder/Library-Management-System-/main/public/central-library-exterior.jpeg') center 45%/cover no-repeat!important}
 .home-page>header,.home-page>main{position:relative;z-index:1}
 .home-hero{background-image:none!important}
 .home-page main,.home-gallery,.home-services,.home-footer{background-color:transparent}
