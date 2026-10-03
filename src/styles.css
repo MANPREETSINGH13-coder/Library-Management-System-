@@ -44,3 +44,7 @@
 .home-page::before{inset:0!important;background-image:url('https://raw.githubusercontent.com/MANPREETSINGH13-coder/Library-Management-System-/main/public/central-library-exterior.jpeg')!important;background-position:center 45%!important;background-size:cover!important;background-repeat:no-repeat!important}
 .home-page>main,.home-hero,.home-gallery,.home-services,.home-footer{background:transparent!important}
 
+/* Paint the fixed photo on the scrolling page itself so it cannot be clipped by a pseudo layer. */
+.home-page{background-color:#123b69!important;background-image:linear-gradient(rgba(8,34,64,.22),rgba(8,34,64,.22)),url('https://raw.githubusercontent.com/MANPREETSINGH13-coder/Library-Management-System-/main/public/central-library-exterior.jpeg')!important;background-position:center,center 45%!important;background-size:cover,cover!important;background-repeat:no-repeat,no-repeat!important;background-attachment:fixed,fixed!important}
+.home-page::before{content:none!important;display:none!important}
+
