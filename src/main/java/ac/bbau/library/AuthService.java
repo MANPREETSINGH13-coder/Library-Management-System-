@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,13 +22,33 @@ public class AuthService {
     private final Map<String, Account> sessions = new ConcurrentHashMap<>();
     private final SecureRandom random = new SecureRandom();
 
-    public AuthService(AccountRepository accountRepository) {
+    public AuthService(AccountRepository accountRepository,
+            @Value("${SUPER_ADMIN_EMAIL:superadmin@bbau.ac.in}") String superAdminEmail,
+            @Value("${SUPER_ADMIN_PASSWORD:Admin@123}") String superAdminPassword) {
         this.accountRepository = accountRepository;
-        addDemo("superadmin@bbau.ac.in", "Super Admin", "Super Admin", "", "Admin@123", "ACTIVE");
+        configureSuperAdmin(superAdminEmail, superAdminPassword);
         addDemo("meera.joshi@bbau.ac.in", "Dr. Meera Joshi", "Administration", "", "Library@123", "ACTIVE");
         addDemo("manpreet@bbau.ac.in", "Manpreet Singh", "Student", "STU-2024-018", "Student@123", "ACTIVE");
         addDemo("milan@bbau.ac.in", "Milan Kumar", "Student", "STU-2023-104", "Student@123", "ACTIVE");
         addDemo("priya@bbau.ac.in", "Priya Sharma", "Student", "STU-2025-027", "Student@123", "PENDING");
+    }
+
+    private void configureSuperAdmin(String email, String password) {
+        if (email == null || email.isBlank() || password == null || password.length() < 8)
+            throw new IllegalStateException("SUPER_ADMIN_EMAIL and a SUPER_ADMIN_PASSWORD of at least 8 characters are required.");
+
+        String id = key(email);
+        Account existing = accountRepository.findById(id).orElse(null);
+        if (existing != null && !"Super Admin".equals(existing.role()))
+            throw new IllegalStateException("SUPER_ADMIN_EMAIL is already used by a non-Super Admin account.");
+
+        String legacyId = key("superadmin@bbau.ac.in");
+        if (!id.equals(legacyId)) {
+            Account legacy = accountRepository.findById(legacyId).orElse(null);
+            if (legacy != null && "Super Admin".equals(legacy.role())) accountRepository.deleteById(legacyId);
+        }
+
+        accountRepository.save(new Account(id, email.trim(), "Super Admin", "Super Admin", "", hash(password), "ACTIVE"));
     }
 
     private void addDemo(String email, String name, String role, String studentId, String password, String status) {
