@@ -33,7 +33,7 @@ public class LibraryService {
     private void studentSeed(long id,String n,String sid,String e,String s){if(!mongo.exists(Query.query(Criteria.where("_id").is(id)),"students"))mongo.insert(new Document("_id",id).append("name",n).append("studentId",sid).append("email",e).append("status",s),"students");}
     private void bookSeed(long id,String t,String a,String c,int cp,int av){mongo.insert(new Document("_id",id).append("title",t).append("author",a).append("category",c).append("copies",cp).append("available",av),"books");}
     private void loanSeed(long id,long bid,String sid,String due){mongo.insert(new Document("_id",id).append("bookId",bid).append("studentId",sid).append("dueDate",due).append("returned",false),"issued_books");}
-    private long nextId(){return mongo.findAndModify(Query.query(Criteria.where("_id").is("library")),new Update().inc("value",1),FindAndModifyOptions.options().returnNew(true),Document.class,"counters").getLong("value");}
+    private long nextId(){Document counter=mongo.findAndModify(Query.query(Criteria.where("_id").is("library")),new Update().inc("value",1),FindAndModifyOptions.options().returnNew(true),Document.class,"counters");if(counter==null||!(counter.get("value") instanceof Number value))throw new IllegalStateException("Library ID counter is unavailable.");return value.longValue();}
     private static long id(Document d){return ((Number)d.get("_id")).longValue();} private static String s(Document d,String k){return d.getString(k);}
     private Student st(Document d){return new Student(id(d),s(d,"name"),s(d,"studentId"),s(d,"email"),AccountStatus.valueOf(s(d,"status")));}
     private Administrator ad(Document d){return new Administrator(id(d),s(d,"name"),s(d,"email"),s(d,"staffRole"));}
