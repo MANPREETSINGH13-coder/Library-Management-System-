@@ -57,3 +57,9 @@
 
 .profile-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}@media(max-width:650px){.profile-actions{width:100%;margin-left:74px}}
 .app,.app button,.app input,.app select,.app textarea{font-weight:600}.app h1,.app h2,.app h3,.app b,.app label,.app small,.app p,.app th,.app td,.app header,.app .foot{font-weight:600}.app .welcome h1,.app .panel-head h2,.app .stat b,.app .dialog h2{font-weight:800}
+
+/* Keep the complete campus photo visible at every viewport size. The photo lives in a fixed layer, so page content scrolls over it without cropping it. */
+.home-page{background:#123b69!important;background-image:none!important}
+.home-page::before{content:""!important;display:block!important;position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background-color:#123b69;background-image:url('../central-library-exterior.jpeg');background-position:center;background-size:contain;background-repeat:no-repeat}
+.home-page>header,.home-page>main{position:relative;z-index:1}
+@media(max-width:650px){.home-page::before{inset:68px 0 0;background-size:contain}}
