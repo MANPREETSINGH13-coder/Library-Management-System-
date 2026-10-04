@@ -23,6 +23,14 @@ public class LibraryController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@RequestHeader("Authorization") String authorization) { auth.logout(authorization); }
 
+    @GetMapping("/auth/profile")
+    public AuthService.Profile profile(@RequestHeader("Authorization") String authorization) { return auth.profile(authorization); }
+
+    @PutMapping("/auth/profile")
+    public AuthService.Profile updateProfile(@RequestHeader("Authorization") String authorization, @RequestBody ProfileUpdate request) {
+        return auth.updateProfile(authorization, request.name(), request.currentPassword(), request.newPassword());
+    }
+
     @PostMapping("/students/register")
     @ResponseStatus(HttpStatus.CREATED)
     public LibraryService.Student register(@RequestBody Registration request) {
@@ -158,6 +166,7 @@ public class LibraryController {
     public Map<String, String> badRequest(RuntimeException exception) { return Map.of("error", exception.getMessage()); }
 
     public record Login(String email, String password, String role) {}
+    public record ProfileUpdate(String name, String currentPassword, String newPassword) {}
     public record Registration(String name, String studentId, String email, String password) {}
     public record Review(boolean approve) {}
     public record NewAdministrator(String name, String email, String staffRole, String password) {}

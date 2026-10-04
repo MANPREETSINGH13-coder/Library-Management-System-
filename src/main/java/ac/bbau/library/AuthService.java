@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AuthService {
     public record Session(String token, String role, String name, String studentId) {}
+    public record Profile(String email, String name, String role, String studentId) {}
 
     public record Account(String id, String email, String name, String role, String studentId, String passwordHash, String status) {}
 
@@ -110,12 +111,38 @@ public class AuthService {
         if (authorization != null && authorization.startsWith("Bearer ")) sessions.remove(authorization.substring(7).trim());
     }
 
+    public Profile profile(String authorization) {
+        Account account = accountFrom(authorization);
+        return new Profile(account.email(), account.name(), account.role(), account.studentId());
+    }
+
+    public Profile updateProfile(String authorization, String name, String currentPassword, String newPassword) {
+        String token = tokenFrom(authorization);
+        Account account = accountFrom(authorization);
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name is required.");
+        String nextHash = account.passwordHash();
+        if (newPassword != null && !newPassword.isBlank()) {
+            if (newPassword.length() < 8) throw new IllegalArgumentException("New password must be at least 8 characters.");
+            if (!matches(currentPassword, account.passwordHash())) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect.");
+            nextHash = hash(newPassword);
+        }
+        Account updated = new Account(account.id(), account.email(), name.trim(), account.role(), account.studentId(), nextHash, account.status());
+        accountRepository.save(updated);
+        sessions.put(token, updated);
+        return new Profile(updated.email(), updated.name(), updated.role(), updated.studentId());
+    }
+
     private Account accountFrom(String authorization) {
-        if (authorization == null || !authorization.startsWith("Bearer "))
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please sign in again.");
-        Account account = sessions.get(authorization.substring(7).trim());
+        String token = tokenFrom(authorization);
+        Account account = sessions.get(token);
         if (account == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Your session has expired. Please sign in again.");
         return account;
+    }
+
+    private String tokenFrom(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer "))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Please sign in again.");
+        return authorization.substring(7).trim();
     }
 
     private void addAccount(String name, String email, String role, String studentId, String password, String status) {
