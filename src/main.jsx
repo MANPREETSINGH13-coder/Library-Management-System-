@@ -77,7 +77,7 @@ function App() {
       setToken(session.token); setRole(session.role); setName(session.name); setStudentId(session.studentId || ''); setAccountEmail(form.email.trim().toLowerCase());
       try { setProfileImage(localStorage.getItem(`bbau-profile-image:${form.email.trim().toLowerCase()}`) || ''); } catch { setProfileImage(''); }
       setPage(session.role === 'Student' ? 'My dashboard' : 'Overview');
-      await loadDashboard(session.token, session.role, session.studentId || '');
+      // Open the dashboard immediately; Render may take a few seconds to wake up.\n      // Data refresh continues in the background so login never feels blocked.\n      void loadDashboard(session.token, session.role, session.studentId || '');
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }
