@@ -17,8 +17,9 @@ services:
       - key: SUPER_ADMIN_PASSWORD
         sync: false
 
-  - type: web`r`n    runtime: static
+  - type: web
     name: bbau-library-web
+    runtime: static
     repo: https://github.com/MANPREETSINGH13-coder/Library-Management-System-
     branch: main
     buildCommand: npm install && npm run build
