@@ -22,8 +22,8 @@ services:
     runtime: static
     repo: https://github.com/MANPREETSINGH13-coder/Library-Management-System-
     branch: main
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
         fromService:

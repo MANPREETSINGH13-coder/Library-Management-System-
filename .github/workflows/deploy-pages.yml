@@ -37,12 +37,13 @@ jobs:
             echo "Set the repository Actions variable VITE_API_BASE_URL to the deployed Java API origin (for example https://your-api.onrender.com)."
             exit 1
           fi
+          cd frontend
           npm install
           npm run build
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: frontend/dist
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Deploy to GitHub Pages
         id: deployment
