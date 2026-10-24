@@ -38,7 +38,7 @@ public class LibraryController {
         if (!request.shareDataPermission()) throw new IllegalArgumentException("Please allow data sharing to submit registration.");
         auth.registerStudent(request.name(), request.email(), request.studentId(), request.password());
         try {
-            return library.registerStudent(request.name(), request.fatherName(), request.studentId(), request.gender(), request.department(), request.course(), request.year(), request.semester(), request.address(), request.district(), request.aadhaarId(), request.email(), request.mobileNumber(), request.shareDataPermission());
+            return library.registerStudent(request.name(), request.fatherName(), request.studentId(), request.gender(), request.department(), request.course(), request.year(), request.semester(), request.address(), request.state(), request.district(), request.aadhaarId(), request.email(), request.mobileNumber(), request.shareDataPermission());
         } catch (RuntimeException exception) {
             auth.cancelStudentRegistration(request.email());
             throw exception;
@@ -169,7 +169,7 @@ public class LibraryController {
 
     public record Login(String email, String password, String role) {}
     public record ProfileUpdate(String name, String currentPassword, String newPassword) {}
-    public record Registration(String name, String fatherName, String studentId, String gender, String department, String course, String year, String semester, String address, String district, String aadhaarId, String password, String confirmPassword, String email, String mobileNumber, boolean shareDataPermission) {}
+    public record Registration(String name, String fatherName, String studentId, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String password, String confirmPassword, String email, String mobileNumber, boolean shareDataPermission) {}
     public record Review(boolean approve) {}
     public record NewAdministrator(String name, String email, String staffRole, String password) {}
     public record NewBook(String title, String author, String category, int copies) {}
