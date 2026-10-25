@@ -102,3 +102,13 @@
 @media(max-width:1050px){.auth.auth-registration{grid-template-columns:1fr}.auth-registration .auth-left{position:relative;height:auto;min-height:0;padding:24px 32px}.auth-registration .auth-message,.auth-registration .auth-left footer,.auth-registration .auth-left:after{display:none}.auth-registration .auth-brand img{width:44px;height:58px}.auth-registration .auth-right{padding:24px 24px 32px}}
 @media(max-width:600px){.auth-registration .auth-left{padding:18px 20px}.auth-registration .auth-brand b{font-size:13px}.auth-registration .auth-brand small{font-size:9px}.auth-registration .auth-right{padding:14px 12px 24px}.auth-registration .auth-box{border-radius:18px;padding:24px 18px}.auth-registration .registration-grid{grid-template-columns:1fr;gap:16px}.auth-registration .registration-grid .wide{grid-column:1/-1}.auth-registration .registration-section{padding-top:18px;margin-top:8px}.auth-registration .home-link{margin-bottom:8px;padding-left:8px}.auth-registration .auth-box h2{font-size:28px}.auth-registration .registration-section p{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.auth-registration .registration-grid input,.auth-registration .registration-grid select,.auth-registration .registration-grid textarea{transition:none}}
+@keyframes registration-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:no-preference){
+.auth-registration .auth-box{animation:registration-enter .32s ease-out both}
+.auth-registration .registration-section{animation:registration-enter .28s ease-out both}
+.auth-registration .registration-section:nth-of-type(2){animation-delay:40ms}
+.auth-registration .registration-section:nth-of-type(3){animation-delay:80ms}
+.auth-registration .registration-section:nth-of-type(4){animation-delay:120ms}
+.auth-registration .registration-grid .primary{transition:transform .16s ease-out,background-color .16s ease-out}
+.auth-registration .registration-grid .primary:not(:disabled):active{transform:scale(.985)}
+}
