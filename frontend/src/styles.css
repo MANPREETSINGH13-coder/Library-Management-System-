@@ -115,7 +115,7 @@
 
 .home-page{isolation:isolate;overflow-x:clip}
 .home-page::before{content:none!important;display:none!important}
-.home-motion-background{position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background-color:#123b69;background-size:contain;background-position:center;background-repeat:no-repeat;transform-origin:center}
+.home-motion-background{position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background-color:#123b69;background-size:cover;background-position:center 45%;background-repeat:no-repeat;transform-origin:center}
 .home-page>header,.home-page>main{position:relative;z-index:1}
 @media(max-width:650px){.home-motion-background{inset:68px 0 0}}
 
