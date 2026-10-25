@@ -112,3 +112,11 @@
 .auth-registration .registration-grid .primary{transition:transform .16s ease-out,background-color .16s ease-out}
 .auth-registration .registration-grid .primary:not(:disabled):active{transform:scale(.985)}
 }
+
+.home-page{isolation:isolate;overflow-x:clip}
+.home-page::before{content:none!important;display:none!important}
+.home-motion-background{position:fixed;inset:84px 0 0;z-index:0;pointer-events:none;background-color:#123b69;background-size:contain;background-position:center;background-repeat:no-repeat;transform-origin:center}
+.home-page>header,.home-page>main{position:relative;z-index:1}
+@media(max-width:650px){.home-motion-background{inset:68px 0 0}}
+
+.home-nav .background-toggle{min-height:36px;padding:8px 10px;border:1px solid #c2d5ef66;background:#173e68;color:#fff;border-radius:7px;font-size:11px}.home-nav .background-toggle:focus-visible{outline:2px solid white;outline-offset:3px}@media(max-width:650px){.home-nav .background-toggle{font-size:10px;padding:6px}}
