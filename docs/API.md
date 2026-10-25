@@ -13,3 +13,4 @@ Base URL: `/api`
 - `POST /student/fines/{id}/submit`
 
 Protected endpoints require `Authorization: Bearer <token>`.
+- `GET /super-admin/students` — Super Admin read-only registration summaries (ID, name, enrollment, email, status). Approval endpoints remain Administration-only.

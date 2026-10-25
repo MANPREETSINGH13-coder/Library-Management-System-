@@ -64,6 +64,12 @@ public class LibraryController {
         return student;
     }
 
+    @GetMapping("/super-admin/students")
+    public List<StudentSummary> registeredStudents(@RequestHeader("Authorization") String authorization) {
+        auth.requireRole(authorization, "Super Admin");
+        return library.students().stream().map(student -> new StudentSummary(student.id(), student.name(), student.studentId(), student.email(), student.status())).toList();
+    }
+
     @GetMapping("/super-admin/administrators")
     public List<LibraryService.Administrator> administrators(@RequestHeader("Authorization") String authorization) {
         auth.requireRole(authorization, "Super Admin");
@@ -181,6 +187,7 @@ public class LibraryController {
     public record Login(String email, String password, String role) {}
     public record ProfileUpdate(String name, String currentPassword, String newPassword) {}
     public record Registration(String name, String fatherName, String studentId, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String password, String confirmPassword, String email, String mobileNumber, boolean shareDataPermission) {}
+    public record StudentSummary(long id, String name, String studentId, String email, LibraryService.AccountStatus status) {}
     public record Review(boolean approve) {}
     public record NewAdministrator(String name, String email, String staffRole, String password) {}
     public record NewBook(Long id, String title, String author, String category, int copies, Integer available) {}

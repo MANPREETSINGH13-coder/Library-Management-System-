@@ -16,7 +16,7 @@ const demoBooks = [
 const navigation = {
   Student: [['My dashboard', LayoutDashboard], ['Browse books', Search], ['Issued books', BookOpen], ['OCR scanner', ScanLine], ['My fines', ReceiptIndianRupee], ['My account', UserRound]],
   Administration: [['Overview', LayoutDashboard], ['Book catalogue', LibraryBig], ['Issue & return', ArrowLeftRight], ['OCR scanner', ScanLine], ['Members', UsersRound], ['Student approvals', UserRoundCheck], ['Fines & fees', ReceiptIndianRupee], ['Reports', ChartNoAxesCombined]],
-  'Super Admin': [['Overview', LayoutDashboard], ['Administration', ShieldCheck], ['System settings', Settings]],
+  'Super Admin': [['Overview', LayoutDashboard], ['Administration', ShieldCheck], ['Registered students', GraduationCap], ['System settings', Settings]],
 };
 const commonCourses = ['B.Tech', 'BCA', 'BBA', 'B.Com', 'B.Sc', 'BA', 'B.Pharm', 'B.Ed', 'LLB', 'BBA LL.B', 'M.Tech', 'MCA', 'MBA', 'M.Com', 'M.Sc', 'MA', 'M.Pharm', 'M.Ed', 'LLM', 'Ph.D', 'Diploma'];
 const today = () => new Date().toISOString().slice(0, 10);
@@ -34,6 +34,7 @@ function App() {
   const [form, setForm] = useState({ name: '', fatherName: '', email: '', id: '', gender: '', department: '', course: '', year: '', semester: '', address: '', state: '', district: '', aadhaarId: '', mobileNumber: '', password: '', confirmPassword: '', shareDataPermission: false, bookId: '', bookCopies: '1', bookAvailable: '1', title: '', author: '', category: 'Fiction', access: 'Student' });
   const [books, setBooks] = useState(demoBooks);
   const [students, setStudents] = useState([]);
+  const [studentsState, setStudentsState] = useState('loading');
   const [studentProfile, setStudentProfile] = useState(null);
   const [profileStatus, setProfileStatus] = useState('');
   const [profileRetry, setProfileRetry] = useState(0);
@@ -90,7 +91,7 @@ function App() {
       setToken(session.token); setRole(session.role); setName(session.name); setStudentId(session.studentId || ''); setAccountEmail(form.email.trim().toLowerCase());
       try { setProfileImage(localStorage.getItem(`bbau-profile-image:${form.email.trim().toLowerCase()}`) || ''); } catch { setProfileImage(''); }
       setPage(session.role === 'Student' ? 'My dashboard' : 'Overview');
-      // Open the dashboard immediately; Render may take a few seconds to wake up.\n      // Data refresh continues in the background so login never feels blocked.\n      void loadDashboard(session.token, session.role, session.studentId || '');
+
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }
@@ -105,21 +106,22 @@ function App() {
     try {
       const [rawBooks, rawStudents, rawAdmins, rawLoans, rawFines] = await Promise.all([
         call('books'),
-        currentRole === 'Administration' ? call('admin/students') : Promise.resolve([]),
+        currentRole === 'Administration' ? call('admin/students') : currentRole === 'Super Admin' ? call('super-admin/students') : Promise.resolve([]),
         currentRole === 'Super Admin' ? call('super-admin/administrators') : Promise.resolve([]),
         currentRole === 'Administration' ? call('admin/loans') : currentRole === 'Student' ? call(`student/loans?studentId=${encodeURIComponent(ownStudentId)}`) : Promise.resolve([]),
         currentRole === 'Administration' ? call('admin/fines') : currentRole === 'Student' ? call(`student/fines?studentId=${encodeURIComponent(ownStudentId)}`) : Promise.resolve([]),
       ]);
       setBooks(rawBooks);
-      setStudents(rawStudents.map(s => ({ ...s, status: s.status[0] + s.status.slice(1).toLowerCase() })));
+      setStudents(rawStudents.map(s => ({ ...s, status: s.status ? s.status[0] + s.status.slice(1).toLowerCase() : 'Unknown' })));
+      setStudentsState('ready');
       setAdmins(rawAdmins);
       const people = rawStudents;
       setLoans(rawLoans.filter(l => !l.returned).map(l => ({ ...l, memberName: currentRole === 'Student' ? 'Your account' : people.find(s => s.studentId === l.studentId)?.name || l.studentId, bookTitle: rawBooks.find(b => b.id === l.bookId)?.title || 'Book' })));
       setFines(rawFines.map(f => ({ ...f, memberName: currentRole === 'Student' ? 'Your account' : people.find(s => s.studentId === f.studentId)?.name || f.studentId })));
-    } catch (e) { say(e.message); }
+    } catch (e) { setStudentsState('error'); say(e.message); }
   }
 
-  useEffect(() => { if (role && token) loadDashboard(); }, [page]);
+  useEffect(() => { if (role && token) { setStudentsState('loading'); void loadDashboard(); } else { setStudents([]); setStudentsState('loading'); } }, [page, role, token]);
   useEffect(() => {
     if (role !== 'Student' || !token) { setStudentProfile(null); setProfileStatus(''); return; }
     if (page !== 'My account') return;
@@ -302,13 +304,13 @@ function App() {
   const nav = navigation[role] || [];
   const showBooks = ['Overview', 'My dashboard', 'Book catalogue', 'Browse books'].includes(page);
   const showLoans = ['Issue & return', 'Issued books'].includes(page);
-  const showMembers = ['Members', 'Student approvals'].includes(page);
+  const showMembers = ['Members', 'Student approvals', 'Registered students'].includes(page) || (root && page === 'Overview');
   const showFines = ['Fines & fees', 'My fines'].includes(page);
   const showScanner = page === 'OCR scanner';
   const scannedBook = books.find(book => book.id === Number(scanBookId));
   const scannedLoans = scannedBook ? loans.filter(loan => loan.bookId === scannedBook.id) : [];
   const stats = root
-    ? [['Administration accounts', admins.length, ShieldCheck], ['Student accounts', students.length, GraduationCap], ['System status', 'Online', CircleCheck]]
+    ? [['Administration accounts', admins.length, ShieldCheck], ['Student accounts', studentsState === 'ready' ? students.length : studentsState === 'error' ? 'Unavailable' : 'Loading…', GraduationCap], ['System status', 'Online', CircleCheck]]
     : [['Total books', books.length, BookCopy], [student ? 'Books I have issued' : 'Books issued', loans.length, BookOpenCheck], [student ? 'My fines' : 'Members', student ? fines.length : students.length, UsersRound], [student ? 'Due soon' : 'Pending approvals', student ? loans.filter(l => l.dueDate < today()).length : students.filter(s => s.status === 'Pending').length, Clock3]];
 
   return <div className="app"><aside className="sidebar"><div className="brand"><img src="/university-logo.svg"/><span><b>BBAU</b><small>UNIVERSITY LIBRARY</small></span></div><div className="campus"><LibraryBig/> Lucknow Campus</div><small className="nav-label">{role.toUpperCase()} PORTAL</small><nav>{nav.map(([label, Icon]) => <button className={page === label ? 'active' : ''} key={label} onClick={() => setPage(label)}><Icon/>{label}{label === 'Student approvals' && students.some(s => s.status === 'Pending') && <em>{students.filter(s => s.status === 'Pending').length}</em>}</button>)}</nav><div className="user"><span>{name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase()}</span><div><b>{name}</b><small>{role}</small></div><button onClick={signOut} title="Sign out"><LogOut/></button></div></aside>
@@ -317,7 +319,7 @@ function App() {
       {showBooks && page !== 'Overview' && page !== 'My dashboard' && <section className="panel"><PanelHead title={student ? 'Browse books' : 'Book catalogue'} note="Search titles, authors and categories" action={admin && <button className="primary" onClick={() => setModal('book')}>＋ Add a book</button>}/><label className="search"><Search/><input placeholder="Search title, author or category" value={query} onChange={e => setQuery(e.target.value)}/></label><BookTable books={filteredBooks} student={student} admin={admin} issue={issueBook} remove={removeBook}/></section>}
       {showScanner && <section className="panel scanner-panel"><PanelHead title="OCR book scanner" note="Scan the printed title or library ID, then issue or return the matched book."/><div className="scanner-layout"><div className="scanner-camera">{cameraStream ? <video ref={videoRef} autoPlay muted playsInline/> : <div className="camera-placeholder"><Camera/><b>Camera ready</b><small>Camera access sirf scan karte waqt use hota hai.</small></div>}<div className="scanner-actions">{!cameraStream ? <button className="primary" onClick={startCamera}><Camera/> Start camera</button> : <><button className="primary" disabled={scanBusy} onClick={captureCameraFrame}><ScanLine/> Capture & scan</button><button className="small" onClick={stopCamera}>Stop camera</button></>}<button className="small" disabled={scanBusy} onClick={() => fileRef.current?.click()}><Upload/> Upload photo</button><input ref={fileRef} className="hidden-file" type="file" accept="image/*" capture="environment" onChange={e => { handleImage(e.target.files?.[0]); e.target.value = ''; }}/></div>{scanBusy && <div className="ocr-progress"><span style={{ width: `${Math.round(scanProgress * 100)}%` }}/></div>}<p className="scan-status" aria-live="polite">{scanStatus || 'Cover/title ya book label par focus karke scan karein. Printed library ID jaise BK-101 sabse achha match deta hai.'}</p></div><div className="scan-match"><small>SCAN RESULT</small>{scannedBook ? <><h2>{scannedBook.title}</h2><p>{scannedBook.author} · BK-{scannedBook.id}</p><p>{scannedBook.available} of {scannedBook.copies} copies available</p>{student ? scannedLoans.length ? <button className="primary" onClick={() => returnBook(scannedLoans[0])}>Return book</button> : <button className="primary" disabled={!scannedBook.available} onClick={() => issueBook(scannedBook)}>Issue to my account</button> : <>{scannedBook.available > 0 && <button className="primary" onClick={() => issueBook(scannedBook)}>Issue to student</button>}{scannedLoans.map(loan => <div className="scan-loan" key={loan.id}><span>Issued to {loan.studentId} · due {loan.dueDate}</span><button className="small" onClick={() => returnBook(loan)}>Return</button></div>)}</>}</> : <><p className="scan-empty">{ocrText ? 'Book automatically match nahi hui. List se select karein.' : 'Scan ke baad recognized book yahan dikhegi.'}</p><select aria-label="Select matched book" value={scanBookId || ''} onChange={e => setScanBookId(e.target.value ? Number(e.target.value) : null)}><option value="">Select a book</option>{books.map(book => <option key={book.id} value={book.id}>{book.title} · BK-{book.id}</option>)}</select></>}{ocrText && <details className="recognized-text"><summary>OCR text</summary><pre>{ocrText}</pre></details>}</div></div></section>}
       {showLoans && <section className="panel"><PanelHead title={student ? 'Issued books' : 'Issue & return'} note={student ? 'Books issued to your account. Return them from here.' : 'Current issued books and their return status'}/><Table heads={['MEMBER', 'STUDENT ID', 'BOOK', 'DUE DATE', 'STATUS', '']}>{loans.map(l => <tr key={l.id}><td>{l.memberName}</td><td>{l.studentId}</td><td>{l.bookTitle}</td><td>{l.dueDate}</td><td><i className={l.dueDate < today() ? 'pending' : 'good'}>{l.dueDate < today() ? 'OVERDUE' : 'ISSUED'}</i></td><td>{(admin || student) && <button className="small" onClick={() => returnBook(l)}>{student ? 'Return book' : 'Return'}</button>}</td></tr>)}</Table>{!loans.length && <p className="empty">No books currently issued.</p>}</section>}
-      {showMembers && <section className="panel"><PanelHead title={page === 'Student approvals' ? 'Student registration approvals' : 'Library members'} note={page === 'Student approvals' ? 'Administration reviews public student signup requests.' : 'Registered students and account status'}/><Table heads={['STUDENT', 'STUDENT ID', 'EMAIL', 'STATUS', '']}>{students.filter(s => page !== 'Student approvals' || s.status === 'Pending').map(s => <tr key={s.id}><td>{s.name}</td><td>{s.studentId}</td><td>{s.email}</td><td><i className={s.status === 'Active' ? 'good' : 'pending'}>{s.status.toUpperCase()}</i></td><td>{admin && s.status === 'Pending' && <><button className="small" onClick={() => reviewStudent(s, true)}>Approve</button> <button className="small danger" onClick={() => reviewStudent(s, false)}>Reject</button></>}</td></tr>)}</Table>{page === 'Student approvals' && !students.some(s => s.status === 'Pending') && <p className="empty">No student requests awaiting approval.</p>}</section>}
+      {showMembers && <section className="panel"><PanelHead title={page === 'Student approvals' ? 'Student registration approvals' : root ? 'Registered students' : 'Library members'} note={page === 'Student approvals' ? 'Administration reviews public student signup requests.' : root ? 'All registrations. Student approvals are managed by Administration.' : 'Registered students and account status'}/><Table heads={['STUDENT', 'STUDENT ID', 'EMAIL', 'STATUS', '']}>{students.filter(s => page !== 'Student approvals' || s.status === 'Pending').map(s => <tr key={s.id}><td>{s.name}</td><td>{s.studentId}</td><td>{s.email}</td><td><i className={s.status === 'Active' ? 'good' : 'pending'}>{s.status.toUpperCase()}</i></td><td>{admin && s.status === 'Pending' && <><button className="small" onClick={() => reviewStudent(s, true)}>Approve</button> <button className="small danger" onClick={() => reviewStudent(s, false)}>Reject</button></>}</td></tr>)}</Table>{page === 'Student approvals' && !students.some(s => s.status === 'Pending') && <p className="empty">No student requests awaiting approval.</p>}{root && studentsState === 'loading' && <p className="empty" role="status">Loading student registrations…</p>}{root && studentsState === 'error' && <div className="empty" role="alert"><p>Student registrations could not be loaded.</p><button className="small" onClick={() => { setStudentsState('loading'); void loadDashboard(); }}>Retry</button></div>}{root && studentsState === 'ready' && !students.length && <p className="empty">No students registered yet.</p>}</section>}
       {showFines && <section className="panel"><PanelHead title={student ? 'My fines' : 'Fines & fee submissions'} note={student ? 'Submit a due fee for Administration review.' : 'Record fines and confirm submitted student payments.'} action={admin && <button className="primary" onClick={addFine}>＋ Add fine</button>}/><Table heads={student ? ['REASON', 'FINE FEE', 'STATUS', ''] : ['STUDENT', 'STUDENT ID', 'REASON', 'FINE FEE', 'STATUS', '']}>{fines.map(f => <tr key={f.id}>{!student && <><td>{f.memberName}</td><td>{f.studentId}</td></>}<td>{f.reason}</td><td>₹{f.amount}</td><td><i className={f.status === 'PAID' ? 'good' : f.status === 'SUBMITTED' ? 'submitted' : 'pending'}>{f.status}</i></td><td>{student && f.status === 'DUE' && <button className="small" onClick={() => submitFine(f)}>Submit fee</button>}{admin && f.status === 'SUBMITTED' && <button className="small" onClick={() => confirmFine(f)}>Confirm paid</button>}</td></tr>)}</Table>{!fines.length && <p className="empty">No fine fees to show.</p>}</section>}
       {page === 'Administration' && <section className="panel"><PanelHead title="Administration accounts" note="Staff accounts created by Super Admin" action={<button className="primary" onClick={() => setModal('admin')}>＋ Create administrator</button>}/><AdminTable admins={admins}/></section>}
       {page === 'System settings' && <section className="panel empty"><ShieldCheck/><h2>Account access policy</h2><p>Students register publicly and need Administration approval.</p><p>Super Admin creates all Administration accounts.</p></section>}
