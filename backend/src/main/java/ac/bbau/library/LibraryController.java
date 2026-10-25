@@ -87,7 +87,7 @@ public class LibraryController {
     @ResponseStatus(HttpStatus.CREATED)
     public LibraryService.Book addBook(@RequestHeader("Authorization") String authorization, @RequestBody NewBook request) {
         auth.requireRole(authorization, "Administration");
-        return library.addBook(request.title(), request.author(), request.category(), request.copies());
+        return library.addBook(request.id(), request.title(), request.author(), request.category(), request.copies(), request.available());
     }
 
     @DeleteMapping("/admin/books")
@@ -183,7 +183,7 @@ public class LibraryController {
     public record Registration(String name, String fatherName, String studentId, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String password, String confirmPassword, String email, String mobileNumber, boolean shareDataPermission) {}
     public record Review(boolean approve) {}
     public record NewAdministrator(String name, String email, String staffRole, String password) {}
-    public record NewBook(String title, String author, String category, int copies) {}
+    public record NewBook(Long id, String title, String author, String category, int copies, Integer available) {}
     public record NewLoan(long bookId, String studentId, String dueDate) {}
     public record NewFine(String studentId, String reason, int amount) {}
     public record StudentFine(String studentId) {}
