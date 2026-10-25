@@ -75,14 +75,18 @@ function App() {
       throw new Error('Java library API connect nahi hua. Pehle project ka Java backend start karein.');
     }
     const data = response.status === 204 ? {} : await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.message || data.error || data.detail || data.title || `Request fail hui (HTTP ${response.status}).`);
+    if (!response.ok) {
+      const loginFallback = path === 'auth/login' && response.status === 401
+        ? 'Email, password ya account type sahi nahi hai. Registration wala email aur password use karein.' : '';
+      throw new Error(data.message || data.detail || loginFallback || data.error || data.title || `Request fail hui (HTTP ${response.status}).`);
+    }
     return data;
   }
 
   async function signIn(event) {
     event.preventDefault(); setError(''); setBusy(true);
     try {
-      const session = await request('auth/login', 'POST', { email: form.email, password: form.password, role: form.access });
+      const session = await request('auth/login', 'POST', { email: form.email.trim().toLowerCase(), password: form.password, role: form.access });
       setToken(session.token); setRole(session.role); setName(session.name); setStudentId(session.studentId || ''); setAccountEmail(form.email.trim().toLowerCase());
       try { setProfileImage(localStorage.getItem(`bbau-profile-image:${form.email.trim().toLowerCase()}`) || ''); } catch { setProfileImage(''); }
       setPage(session.role === 'Student' ? 'My dashboard' : 'Overview');

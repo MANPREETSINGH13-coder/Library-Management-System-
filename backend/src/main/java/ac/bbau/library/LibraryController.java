@@ -168,6 +168,12 @@ public class LibraryController {
         return library.returnBook(id, ownId);
     }
 
+    @ExceptionHandler(ResponseStatusException.class)
+    public org.springframework.http.ResponseEntity<Map<String, String>> statusError(ResponseStatusException exception) {
+        String message = exception.getReason() == null ? "Request could not be completed." : exception.getReason();
+        return org.springframework.http.ResponseEntity.status(exception.getStatusCode()).body(Map.of("message", message));
+    }
+
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> badRequest(RuntimeException exception) { return Map.of("error", exception.getMessage()); }
