@@ -45,6 +45,11 @@ public class LibraryController {
         }
     }
 
+    @GetMapping("/student/profile")
+    public LibraryService.Student studentProfile(@RequestHeader("Authorization") String authorization) {
+        return library.studentProfile(auth.requireStudentId(authorization));
+    }
+
     @GetMapping("/admin/students")
     public List<LibraryService.Student> students(@RequestHeader("Authorization") String authorization, @RequestParam(defaultValue = "false") boolean pendingOnly) {
         auth.requireRole(authorization, "Administration");

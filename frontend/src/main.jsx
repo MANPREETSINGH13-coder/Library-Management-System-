@@ -34,6 +34,9 @@ function App() {
   const [form, setForm] = useState({ name: '', fatherName: '', email: '', id: '', gender: '', department: '', course: '', year: '', semester: '', address: '', state: '', district: '', aadhaarId: '', mobileNumber: '', password: '', confirmPassword: '', shareDataPermission: false, title: '', author: '', category: 'Fiction', access: 'Student' });
   const [books, setBooks] = useState(demoBooks);
   const [students, setStudents] = useState([]);
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [profileStatus, setProfileStatus] = useState('');
+  const [profileRetry, setProfileRetry] = useState(0);
   const [admins, setAdmins] = useState([]);
   const [loans, setLoans] = useState([]);
   const [fines, setFines] = useState([]);
@@ -113,6 +116,16 @@ function App() {
   }
 
   useEffect(() => { if (role && token) loadDashboard(); }, [page]);
+  useEffect(() => {
+    if (role !== 'Student' || !token) { setStudentProfile(null); setProfileStatus(''); return; }
+    if (page !== 'My account') return;
+    let active = true;
+    setProfileStatus('loading');
+    request('student/profile').then(profile => { if (active) { setStudentProfile(profile); setProfileStatus(''); } })
+      .catch(error => { if (active) setProfileStatus(error.message); });
+    return () => { active = false; };
+  }, [role, token, page, profileRetry]);
+
   useEffect(() => {
     if (!cameraStream) return undefined;
     if (page !== 'OCR scanner') { cameraStream.getTracks().forEach(track => track.stop()); setCameraStream(null); return undefined; }
@@ -295,13 +308,22 @@ function App() {
       {page === 'Administration' && <section className="panel"><PanelHead title="Administration accounts" note="Staff accounts created by Super Admin" action={<button className="primary" onClick={() => setModal('admin')}>＋ Create administrator</button>}/><AdminTable admins={admins}/></section>}
       {page === 'System settings' && <section className="panel empty"><ShieldCheck/><h2>Account access policy</h2><p>Students register publicly and need Administration approval.</p><p>Super Admin creates all Administration accounts.</p></section>}
       {page === 'Reports' && <section className="panel empty"><ChartNoAxesCombined/><h2>Library reports</h2><p>Current issue and membership summaries are shown on this dashboard.</p></section>}
-      {page === 'My account' && <section className="panel empty"><UserRound/><h2>{name}</h2><p>Student ID: {studentId}</p><p>Sign-in email: your approved university email</p></section>}
+      {page === 'My account' && <section className="panel student-details"><PanelHead title="My student profile" note="Your registration and library membership details" action={<button className="small" onClick={openProfile}>Edit name / password</button>}/>{profileStatus === 'loading' ? <p className="profile-state" role="status">Loading your details…</p> : profileStatus ? <div className="profile-state" role="alert"><p>{profileStatus}</p><button className="small" onClick={() => setProfileRetry(value => value + 1)}>Retry</button></div> : studentProfile && <StudentDetails profile={{ ...studentProfile, name, email: accountEmail || studentProfile.email }}/>}</section>}
       <footer className="foot">© 2026 Babasaheb Bhimrao Ambedkar University · Library Management System <span>● System operational</span></footer>
     </main>{toast && <div className="toast">✓　{toast}</div>}
     {modal && <div className="shade" onClick={e => e.target === e.currentTarget && setModal('')}><form className="dialog" onSubmit={modal === 'book' ? addBook : modal === 'profile' ? updateProfile : createAdmin}><button type="button" className="x" onClick={() => setModal('')}>×</button><h2>{modal === 'book' ? 'Add a book' : modal === 'profile' ? 'Edit profile' : 'Create Administration account'}</h2><p>{modal === 'book' ? 'Add a title to the university catalogue.' : modal === 'profile' ? 'Update your name or reset your password.' : 'Set a password for this new staff account.'}</p>{modal === 'book' ? <><Field label="Title" required value={form.title} set={v => set('title', v)}/><Field label="Author" required value={form.author} set={v => set('author', v)}/><label>Category<select value={form.category} onChange={e => set('category', e.target.value)}><option>Fiction</option><option>History</option><option>Science</option><option>Computer science</option><option>Biography</option></select></label></> : modal === 'profile' ? <><Field label="Full name" required value={profileForm.name} set={v => setProfileForm(current => ({ ...current, name: v }))}/><Field label="Current password (only for password reset)" type="password" autoComplete="current-password" value={profileForm.currentPassword} set={v => setProfileForm(current => ({ ...current, currentPassword: v }))}/><Field label="New password (minimum 8 characters)" type="password" autoComplete="new-password" minLength={8} value={profileForm.newPassword} set={v => setProfileForm(current => ({ ...current, newPassword: v }))}/></> : <><Field label="Full name" required value={form.name} set={v => set('name', v)}/><Field label="University email" type="email" required value={form.email} set={v => set('email', v)}/><label>Staff role<select value={form.category} onChange={e => set('category', e.target.value)}><option>Librarian</option><option>Library staff</option></select></label><Field label="Temporary password (minimum 8 characters)" type="password" minLength={8} required value={form.password} set={v => set('password', v)}/></>}<div className="modal-actions"><button type="button" className="cancel" onClick={() => setModal('')}>Cancel</button><button className="primary">{modal === 'book' ? 'Add book' : modal === 'profile' ? 'Save profile' : 'Create account'}</button></div></form></div>}
   </div>;
 }
 
+function StudentDetails({ profile }) {
+  const groups = [
+    ['Personal details', [['Full name', profile.name], ["Father's name", profile.fatherName], ['Gender', profile.gender], ['Aadhaar ID', profile.aadhaarId]]],
+    ['Academic details', [['Enrollment number', profile.studentId], ['Department', profile.department], ['Course', profile.course], ['Year', profile.year], ['Semester', profile.semester], ['Membership status', profile.status]]],
+    ['Contact & address', [['Email', profile.email], ['Mobile number', profile.mobileNumber], ['Address', profile.address], ['State / Union Territory', profile.state], ['District', profile.district]]],
+    ['Permissions', [['Data-sharing permission', profile.shareDataPermission ? 'Consent recorded' : 'No consent recorded']]],
+  ];
+  return <div className="student-details-groups">{groups.map(([title, fields]) => <section key={title}><h3>{title}</h3><dl>{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not provided'}</dd></div>)}</dl></section>)}</div>;
+}
 function RegistrationSection({ number, title, note }) { return <div className="registration-section wide"><span aria-hidden="true">{number}</span><div><h3>{title}</h3><p>{note}</p></div></div>; }
 function SelectField({ label, value, options, set, disabled = false, placeholder = `Select ${label.toLowerCase()}` }) {
   return <label>{label}<select required value={value} disabled={disabled} onChange={event => set(event.target.value)}><option value="">{placeholder}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>;
