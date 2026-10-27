@@ -50,6 +50,14 @@ public class LibraryController {
         return library.studentProfile(auth.requireStudentId(authorization));
     }
 
+    @PutMapping("/student/profile")
+    public LibraryService.Student updateStudentProfile(@RequestHeader("Authorization") String authorization, @RequestBody StudentProfileUpdate request) {
+        String ownId = auth.requireStudentId(authorization);
+        LibraryService.Student updated = library.updateStudentProfile(ownId, request);
+        auth.updateProfile(authorization, updated.name(), null, null);
+        return updated;
+    }
+
     @GetMapping("/admin/students")
     public List<LibraryService.Student> students(@RequestHeader("Authorization") String authorization, @RequestParam(defaultValue = "false") boolean pendingOnly) {
         auth.requireRole(authorization, "Administration");
@@ -185,6 +193,7 @@ public class LibraryController {
     public Map<String, String> badRequest(RuntimeException exception) { return Map.of("error", exception.getMessage()); }
 
     public record Login(String email, String password, String role) {}
+    public record StudentProfileUpdate(String name, String fatherName, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String mobileNumber, Boolean shareDataPermission) {}
     public record ProfileUpdate(String name, String currentPassword, String newPassword) {}
     public record Registration(String name, String fatherName, String studentId, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String password, String confirmPassword, String email, String mobileNumber, boolean shareDataPermission) {}
     public record StudentSummary(long id, String name, String studentId, String email, LibraryService.AccountStatus status) {}

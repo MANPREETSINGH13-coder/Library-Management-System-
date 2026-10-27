@@ -65,6 +65,24 @@ public class LibraryService {
         if (student == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Student profile not found.");
         return st(student);
     }
+    public synchronized Student updateStudentProfile(String ownId, LibraryController.StudentProfileUpdate request) {
+        if(request.name()==null || request.name().isBlank() || request.name().trim().length()>120) throw new IllegalArgumentException("Full name is required and must be at most 120 characters.");
+        if(request.mobileNumber()!=null && !request.mobileNumber().isBlank() && !request.mobileNumber().trim().matches("[0-9]{10}")) throw new IllegalArgumentException("Mobile number must contain 10 digits.");
+        if(request.aadhaarId()!=null && !request.aadhaarId().isBlank() && !request.aadhaarId().trim().matches("[0-9]{12}")) throw new IllegalArgumentException("Aadhaar ID must contain 12 digits.");
+        Update update=new Update();
+        String[] fields={"name","fatherName","gender","department","course","year","semester","address","state","district","aadhaarId","mobileNumber"};
+        String[] values={request.name(),request.fatherName(),request.gender(),request.department(),request.course(),request.year(),request.semester(),request.address(),request.state(),request.district(),request.aadhaarId(),request.mobileNumber()};
+        for(int i=0;i<fields.length;i++) {
+            if(values[i]!=null) {
+                if(values[i].length()>1000) throw new IllegalArgumentException("Profile field is too long.");
+                update.set(fields[i],values[i].trim());
+            }
+        }
+        if(request.shareDataPermission()!=null) update.set("shareDataPermission",request.shareDataPermission().toString());
+        Document result=mongo.findAndModify(Query.query(Criteria.where("studentId").regex("^"+Pattern.quote(ownId)+"$","i")),update,FindAndModifyOptions.options().returnNew(true),Document.class,"students");
+        if(result==null)throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,"Student profile not found.");
+        return st(result);
+    }
     public synchronized Student registerStudent(String n,String fatherName,String sid,String gender,String department,String course,String year,String semester,String address,String state,String district,String aadhaarId,String e,String mobileNumber,boolean shareDataPermission){Query q=new Query(new Criteria().orOperator(Criteria.where("email").regex("^"+Pattern.quote(e)+"$","i"),Criteria.where("studentId").regex("^"+Pattern.quote(sid)+"$","i")));if(mongo.exists(q,"students"))throw new IllegalArgumentException("A student with this email or student ID already exists.");long i=nextId();insertStrings(new Document("_id",i).append("name",n).append("fatherName",fatherName).append("studentId",sid).append("gender",gender).append("department",department).append("course",course).append("year",year).append("semester",semester).append("address",address).append("state",state).append("district",district).append("aadhaarId",aadhaarId).append("email",e).append("mobileNumber",mobileNumber).append("shareDataPermission",shareDataPermission).append("status","PENDING"),"students");return st(find(i,"students"));}
     public synchronized Student reviewStudent(long i,boolean ok){Document d=mongo.findAndModify(Query.query(key("_id",i).and("status").is("PENDING")),new Update().set("status",ok?"ACTIVE":"REJECTED"),FindAndModifyOptions.options().returnNew(true),Document.class,"students");if(d==null)throw new NoSuchElementException("Student not found or already reviewed.");return st(d);}
     public synchronized Administrator createAdministrator(String n,String e,String r){if(mongo.exists(Query.query(Criteria.where("email").regex("^"+Pattern.quote(e)+"$","i")),"administrators"))throw new IllegalArgumentException("An administrator with this email already exists.");long i=nextId();insertStrings(new Document("_id",i).append("name",n).append("email",e).append("staffRole",r),"administrators");return ad(find(i,"administrators"));}
