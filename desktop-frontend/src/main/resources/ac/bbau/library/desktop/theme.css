@@ -1,0 +1,53 @@
+* { -fx-font-family: "Segoe UI", "Arial"; }
+.app-shell { -fx-background-color: #f2f6fb; }
+.sidebar { -fx-background-color: #123256; -fx-padding: 24 16 20 16; }
+.logo-mark { -fx-background-color: white; -fx-background-radius: 10; -fx-text-fill: #2a6fb9; -fx-font-size: 19px; -fx-font-weight: 800; -fx-padding: 10 12; }
+.sidebar-title { -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: 800; }
+.sidebar-caption { -fx-text-fill: #b6c9dd; -fx-font-size: 11px; -fx-font-weight: 700; }
+.nav-button { -fx-background-color: transparent; -fx-text-fill: #e3edf8; -fx-font-size: 14px; -fx-font-weight: 700; -fx-padding: 13 14; -fx-alignment: center-left; -fx-background-radius: 10; }
+.nav-button:hover { -fx-background-color: #244b76; }
+.topbar { -fx-background-color: white; -fx-padding: 18 28; -fx-border-color: #e0e7ef; -fx-border-width: 0 0 1 0; }
+.topbar-user { -fx-text-fill: #29425f; -fx-font-weight: 700; }
+.page-scroll, .page-scroll > .viewport { -fx-background-color: transparent; }
+.page-host { -fx-padding: 30 36 36 36; -fx-background-color: #f2f6fb; }
+.page-host > .label:first-child, .eyebrow { -fx-text-fill: #2867a7; -fx-font-size: 11px; -fx-font-weight: 800; -fx-letter-spacing: 1.2px; }
+.page-title { -fx-text-fill: #18314f; -fx-font-size: 32px; -fx-font-weight: 800; }
+.muted, .small-muted { -fx-text-fill: #6c7f95; }
+.small-muted { -fx-font-size: 11px; }
+.stat-card, .auth-card { -fx-background-color: white; -fx-background-radius: 16; -fx-border-color: #dce5ef; -fx-border-radius: 16; -fx-padding: 22; }
+.stat-value { -fx-text-fill: #18314f; -fx-font-size: 23px; -fx-font-weight: 800; }
+.primary-button { -fx-background-color: #2a6fb9; -fx-text-fill: white; -fx-font-weight: 800; -fx-background-radius: 9; -fx-padding: 12 18; }
+.primary-button:hover { -fx-background-color: #1d5e9f; }
+.outline-button { -fx-background-color: white; -fx-text-fill: #244b76; -fx-border-color: #d5e0eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-font-weight: 700; -fx-padding: 9 15; }
+.notice { -fx-background-color: #e8f1fb; -fx-text-fill: #244b76; -fx-padding: 11 14; -fx-background-radius: 8; -fx-font-weight: 700; }
+.error-text { -fx-text-fill: #a53333; -fx-font-weight: 700; }
+.field-label { -fx-text-fill: #24415f; -fx-font-size: 12px; -fx-font-weight: 700; }
+.text-field, .password-field, .combo-box, .date-picker { -fx-background-color: white; -fx-border-color: #d5e0eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; }
+.table-view { -fx-background-color: white; -fx-border-color: #dce5ef; -fx-border-radius: 12; -fx-background-radius: 12; }
+.table-view .column-header-background { -fx-background-color: #eaf1f8; -fx-background-radius: 12 12 0 0; }
+.table-view .column-header, .table-view .filler { -fx-background-color: transparent; -fx-size: 42px; }
+.table-view .column-header .label { -fx-text-fill: #38536f; -fx-font-weight: 800; }
+.table-row-cell { -fx-cell-size: 44px; }
+.auth-background { -fx-background-color: #f2f6fb; }
+.brand-panel { -fx-background-color: #123256; -fx-padding: 54; -fx-min-width: 52%; }
+.brand-title { -fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: 800; }
+.brand-quote { -fx-text-fill: white; -fx-font-size: 34px; -fx-font-weight: 800; }
+.brand-caption { -fx-text-fill: #b6c9dd; -fx-font-size: 14px; }
+.auth-title { -fx-font-size: 32px; -fx-font-weight: 800; -fx-text-fill: #18314f; }
+.registration-side { -fx-background-color: #f3f6fa; -fx-alignment: top-center; }
+.registration-brand { -fx-min-width: 36%; -fx-pref-width: 40%; -fx-padding: 48 42; }
+.registration-scroll, .registration-scroll > .viewport { -fx-background-color: transparent; -fx-background: transparent; }
+.registration-scroll { -fx-fit-to-width: true; -fx-border-width: 0; }
+.registration-form { -fx-padding: 28 42 36 42; -fx-spacing: 12; -fx-max-width: 820; }
+.registration-form .page-title { -fx-font-size: 29px; }
+.registration-form .muted { -fx-font-size: 13px; }
+.registration-form .field-label { -fx-font-size: 12px; }
+.registration-form .text-field, .registration-form .password-field, .registration-form .combo-box { -fx-min-height: 42px; -fx-font-size: 13px; -fx-padding: 8 12; }
+.registration-form .text-field:focused, .registration-form .password-field:focused, .registration-form .combo-box:focused { -fx-border-color: #5b94ce; -fx-effect: dropshadow(gaussian, #2a6fb922, 8, 0.25, 0, 1); }
+.registration-section { -fx-text-fill: #18314f; -fx-font-size: 16px; -fx-font-weight: 800; -fx-padding: 14 0 0 0; -fx-border-color: #dce5ef; -fx-border-width: 1 0 0 0; }
+.registration-consent { -fx-text-fill: #38536f; -fx-font-size: 12px; -fx-padding: 8 2; }
+.registration-consent .text { -fx-fill: #38536f; -fx-font-size: 12px; }
+.registration-note { -fx-text-fill: #6c7f95; -fx-font-size: 12px; -fx-padding: 6 0 0 0; }
+.registration-back { -fx-background-color: transparent; -fx-text-fill: #2867a7; -fx-font-size: 12px; -fx-padding: 0 0 8 0; -fx-cursor: hand; }
+.registration-form .error-text { -fx-font-size: 12px; -fx-padding: 4 0; }
+.registration-form .primary-button { -fx-min-height: 46px; -fx-font-size: 14px; }

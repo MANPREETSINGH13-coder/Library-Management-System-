@@ -1,0 +1,206 @@
+package ac.bbau.library;
+
+import java.util.List;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api")
+public class LibraryController {
+    private final LibraryService library;
+    private final AuthService auth;
+    public LibraryController(LibraryService library, AuthService auth) { this.library = library; this.auth = auth; }
+
+    @GetMapping("/health")
+    public Map<String, String> health() { return Map.of("status", "ok"); }
+
+    @PostMapping("/auth/login")
+    public AuthService.Session login(@RequestBody Login request) { return auth.login(request.email(), request.password(), request.role()); }
+
+    @PostMapping("/auth/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestHeader("Authorization") String authorization) { auth.logout(authorization); }
+
+    @GetMapping("/auth/profile")
+    public AuthService.Profile profile(@RequestHeader("Authorization") String authorization) { return auth.profile(authorization); }
+
+    @PutMapping("/auth/profile")
+    public AuthService.Profile updateProfile(@RequestHeader("Authorization") String authorization, @RequestBody ProfileUpdate request) {
+        return auth.updateProfile(authorization, request.name(), request.currentPassword(), request.newPassword());
+    }
+
+    @PostMapping("/students/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LibraryService.Student register(@RequestBody Registration request) {
+        if (request.password() == null || !request.password().equals(request.confirmPassword())) throw new IllegalArgumentException("Password and confirm password must match.");
+        if (!request.shareDataPermission()) throw new IllegalArgumentException("Please allow data sharing to submit registration.");
+        auth.registerStudent(request.name(), request.email(), request.studentId(), request.password());
+        try {
+            return library.registerStudent(request.name(), request.fatherName(), request.studentId(), request.gender(), request.department(), request.course(), request.year(), request.semester(), request.address(), request.state(), request.district(), request.aadhaarId(), request.email(), request.mobileNumber(), request.shareDataPermission());
+        } catch (RuntimeException exception) {
+            auth.cancelStudentRegistration(request.email());
+            throw exception;
+        }
+    }
+
+    @GetMapping("/student/profile")
+    public LibraryService.Student studentProfile(@RequestHeader("Authorization") String authorization) {
+        return library.studentProfile(auth.requireStudentId(authorization));
+    }
+
+    @PutMapping("/student/profile")
+    public LibraryService.Student updateStudentProfile(@RequestHeader("Authorization") String authorization, @RequestBody StudentProfileUpdate request) {
+        String ownId = auth.requireStudentId(authorization);
+        LibraryService.Student updated = library.updateStudentProfile(ownId, request);
+        auth.updateProfile(authorization, updated.name(), null, null);
+        return updated;
+    }
+
+    @GetMapping("/admin/students")
+    public List<LibraryService.Student> students(@RequestHeader("Authorization") String authorization, @RequestParam(defaultValue = "false") boolean pendingOnly) {
+        auth.requireRole(authorization, "Administration");
+        return pendingOnly ? library.pendingStudents() : library.students();
+    }
+
+    @PostMapping("/admin/students/{id}/review")
+    public LibraryService.Student review(@RequestHeader("Authorization") String authorization, @PathVariable long id, @RequestBody Review request) {
+        auth.requireRole(authorization, "Administration");
+        LibraryService.Student student = library.reviewStudent(id, request.approve());
+        auth.reviewStudent(student.email(), request.approve());
+        return student;
+    }
+
+    @GetMapping("/super-admin/students")
+    public List<StudentSummary> registeredStudents(@RequestHeader("Authorization") String authorization) {
+        auth.requireRole(authorization, "Super Admin");
+        return library.students().stream().map(student -> new StudentSummary(student.id(), student.name(), student.studentId(), student.email(), student.status())).toList();
+    }
+
+    @GetMapping("/super-admin/administrators")
+    public List<LibraryService.Administrator> administrators(@RequestHeader("Authorization") String authorization) {
+        auth.requireRole(authorization, "Super Admin");
+        return library.administrators();
+    }
+
+    @PostMapping("/super-admin/administrators")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LibraryService.Administrator createAdministrator(@RequestHeader("Authorization") String authorization, @RequestBody NewAdministrator request) {
+        auth.requireRole(authorization, "Super Admin");
+        String staffRole = List.of("Librarian", "Library staff").contains(request.staffRole()) ? request.staffRole() : "Librarian";
+        LibraryService.Administrator administrator = library.createAdministrator(request.name(), request.email(), staffRole);
+        auth.createAdministrator(request.name(), request.email(), request.password());
+        return administrator;
+    }
+
+    @GetMapping("/books")
+    public List<LibraryService.Book> books() { return library.books(); }
+
+    @PostMapping("/admin/books")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LibraryService.Book addBook(@RequestHeader("Authorization") String authorization, @RequestBody NewBook request) {
+        auth.requireRole(authorization, "Administration");
+        return library.addBook(request.id(), request.title(), request.author(), request.category(), request.copies(), request.available());
+    }
+
+    @DeleteMapping("/admin/books")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteBook(@RequestHeader("Authorization") String authorization, @RequestParam String title) {
+        auth.requireRole(authorization, "Administration");
+        library.deleteBook(title);
+    }
+
+    @GetMapping("/admin/fines")
+    public List<LibraryService.Fine> fines(@RequestHeader("Authorization") String authorization) {
+        auth.requireRole(authorization, "Administration");
+        return library.fines();
+    }
+
+    @PostMapping("/admin/fines")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LibraryService.Fine addFine(@RequestHeader("Authorization") String authorization, @RequestBody NewFine request) {
+        auth.requireRole(authorization, "Administration");
+        return library.addFine(request.studentId(), request.reason(), request.amount());
+    }
+
+    @GetMapping("/student/fines")
+    public List<LibraryService.Fine> studentFines(@RequestHeader("Authorization") String authorization, @RequestParam String studentId) {
+        String ownId = auth.requireStudentId(authorization);
+        if (!ownId.equalsIgnoreCase(studentId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own fines.");
+        return library.finesForStudent(ownId);
+    }
+
+    @PostMapping("/student/fines/{id}/submit")
+    public LibraryService.Fine submitFine(@RequestHeader("Authorization") String authorization, @PathVariable long id, @RequestBody StudentFine request) {
+        String ownId = auth.requireStudentId(authorization);
+        return library.submitFine(id, ownId);
+    }
+
+    @PostMapping("/admin/fines/{id}/confirm")
+    public LibraryService.Fine confirmFine(@RequestHeader("Authorization") String authorization, @PathVariable long id) {
+        auth.requireRole(authorization, "Administration");
+        return library.confirmFine(id);
+    }
+
+    @PostMapping("/admin/loans")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LibraryService.Loan issue(@RequestHeader("Authorization") String authorization, @RequestBody NewLoan request) {
+        auth.requireRole(authorization, "Administration");
+        return library.issueBook(request.bookId(), request.studentId(), request.dueDate());
+    }
+
+    @PostMapping("/admin/loans/{id}/return")
+    public LibraryService.Loan returnBook(@RequestHeader("Authorization") String authorization, @PathVariable long id) {
+        auth.requireRole(authorization, "Administration");
+        return library.returnBook(id);
+    }
+
+    @GetMapping("/admin/loans")
+    public List<LibraryService.Loan> loans(@RequestHeader("Authorization") String authorization) {
+        auth.requireRole(authorization, "Administration");
+        return library.loans();
+    }
+
+    @GetMapping("/student/loans")
+    public List<LibraryService.Loan> studentLoans(@RequestHeader("Authorization") String authorization, @RequestParam String studentId) {
+        String ownId = auth.requireStudentId(authorization);
+        if (!ownId.equalsIgnoreCase(studentId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own loans.");
+        return library.loansForStudent(ownId);
+    }
+
+    @PostMapping("/student/loans")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LibraryService.Loan studentIssue(@RequestHeader("Authorization") String authorization, @RequestBody NewLoan request) {
+        String ownId = auth.requireStudentId(authorization);
+        return library.issueBook(request.bookId(), ownId, request.dueDate());
+    }
+
+    @PostMapping("/student/loans/{id}/return")
+    public LibraryService.Loan studentReturn(@RequestHeader("Authorization") String authorization, @PathVariable long id) {
+        String ownId = auth.requireStudentId(authorization);
+        return library.returnBook(id, ownId);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public org.springframework.http.ResponseEntity<Map<String, String>> statusError(ResponseStatusException exception) {
+        String message = exception.getReason() == null ? "Request could not be completed." : exception.getReason();
+        return org.springframework.http.ResponseEntity.status(exception.getStatusCode()).body(Map.of("message", message));
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> badRequest(RuntimeException exception) { return Map.of("error", exception.getMessage()); }
+
+    public record Login(String email, String password, String role) {}
+    public record StudentProfileUpdate(String name, String fatherName, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String mobileNumber, Boolean shareDataPermission) {}
+    public record ProfileUpdate(String name, String currentPassword, String newPassword) {}
+    public record Registration(String name, String fatherName, String studentId, String gender, String department, String course, String year, String semester, String address, String state, String district, String aadhaarId, String password, String confirmPassword, String email, String mobileNumber, boolean shareDataPermission) {}
+    public record StudentSummary(long id, String name, String studentId, String email, LibraryService.AccountStatus status) {}
+    public record Review(boolean approve) {}
+    public record NewAdministrator(String name, String email, String staffRole, String password) {}
+    public record NewBook(Long id, String title, String author, String category, int copies, Integer available) {}
+    public record NewLoan(long bookId, String studentId, String dueDate) {}
+    public record NewFine(String studentId, String reason, int amount) {}
+    public record StudentFine(String studentId) {}
+}

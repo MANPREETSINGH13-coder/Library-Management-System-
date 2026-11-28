@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: bbau-library-api
+    runtime: docker
+    repo: https://github.com/MANPREETSINGH13-coder/Library-Management-System-
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: bbau_library
+      - key: CORS_ALLOWED_ORIGINS
+        value: http://localhost:5173,http://127.0.0.1:5173,https://manpreetsingh13-coder.github.io
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false
